@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер слепой печати</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .text-display {
+            background: #f8f9fa;
+            padding: 30px 30px 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            line-height: 2.2;
+            font-family: 'Monaco', 'Courier New', monospace;
+            min-height: 120px;
+            letter-spacing: 2px;
+        }
+
+        .char {
+            transition: all 0.1s ease;
+            display: inline-block;
+            position: relative;
+        }
+
+        .char .eng-hint {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5em;
+            color: #999;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .char.correct {
+            color: #10b981;
+            background: #d1fae5;
+        }
+
+        .char.incorrect {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+
+        .char.current {
+            background: #fbbf24;
+            animation: pulse 1s infinite;
+        }
+        
+        .char.current .eng-hint {
+            opacity: 0.7;
+            color: #666;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .input-area {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .reset-btn {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .reset-btn:hover {
+            background: #d1d5db;
+        }
+
+        .level-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .level-selector label {
+            font-size: 1.1em;
+            margin-right: 10px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .level-selector select {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .finished {
+            text-align: center;
+            padding: 20px;
+            background: #d1fae5;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .finished h2 {
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+
+        .keyboard-hint {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⌨️ Тренажер слепой печати</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Скорость</div>
+                <div class="stat-value" id="wpm">0</div>
+                <div class="stat-label">зн/мин</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Точность</div>
+                <div class="stat-value" id="accuracy">100%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Время</div>
+                <div class="stat-value" id="timer">0</div>
+                <div class="stat-label">сек</div>
+            </div>
+        </div>
+
+        <div class="level-selector">
+            <label for="level">Уровень:</label>
+            <select id="level">
+                <option value="easy">Легкий (средний ряд)</option>
+                <option value="medium">Средний (+ верхний ряд)</option>
+                <option value="hard">Сложный (все буквы)</option>
+                <option value="expert">Эксперт (с цифрами)</option>
+            </select>
+        </div>
+
+        <div class="keyboard-hint">💡 Не забудьте включить русскую раскладку!</div>
+
+        <div class="text-display" id="textDisplay"></div>
+
+        <div class="input-area">
+            <input type="text" id="textInput" placeholder="Начните печатать..." disabled>
+        </div>
+
+        <div class="buttons">
+            <button class="start-btn" id="startBtn" onclick="startGame()">Начать</button>
+            <button class="reset-btn" onclick="resetGame()">Сброс</button>
+        </div>
+    </div>
+
+    <script>
+        const texts = {
+            easy: [
+                'ыва олд фыв апр жды',
+                'фыв ыва апр олд жды',
+                'дом лес сад вода',
+                'рука нога дело папа',
+                'мама каша соль сало'
+            ],
+            medium: [
+                'быстро печатать текст',
+                'учить клавиатуру каждый день',
+                'точность важнее скорости',
+                'тренировка делает мастера',
+                'слепой метод печати'
+            ],
+            hard: [
+                'программирование требует практики',
+                'освоить клавиатуру несложно',
+                'скорость печати растет ежедневно',
+                'никогда не переставай учиться',
+                'точность превосходит совершенство'
+            ],
+            expert: [
+                'переменная число = 42 плюс 10',
+                'функция сложить числа от 1 до 100',
+                'константа пи = 3.14159 радиус 15',
+                'цикл для индекса от 0 до 20',
+                'условие если х больше 5 то истина'
+            ]
+        };
+
+        // Маппинг русских букв на английские (как на клавиатуре)
+        const ruToEng = {
+            'а': 'f', 'б': ',', 'в': 'd', 'г': 'u', 'д': 'l', 'е': 't', 'ё': '`',
+            'ж': ';', 'з': 'p', 'и': 'b', 'й': 'q', 'к': 'r', 'л': 'k', 'м': 'v',
+            'н': 'y', 'о': 'j', 'п': 'g', 'р': 'h', 'с': 'c', 'т': 'n', 'у': 'e',
+            'ф': 'a', 'х': '[', 'ц': 'w', 'ч': 'x', 'ш': 'i', 'щ': 'o', 'ъ': ']',
+            'ы': 's', 'ь': 'm', 'э': '\'', 'ю': '.', 'я': 'z', ' ': ' ',
+            '=': '=', '+': '+', '-': '-', '.': '.', ',': ','
+        };
+
+        function getEngHint(ruChar) {
+            return ruToEng[ruChar.toLowerCase()] || '';
+        }
+
+        let currentText = '';
+        let currentIndex = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let errors = 0;
+        let totalChars = 0;
+
+        const textDisplay = document.getElementById('textDisplay');
+        const textInput = document.getElementById('textInput');
+        const startBtn = document.getElementById('startBtn');
+        const levelSelect = document.getElementById('level');
+
+        function getRandomText() {
+            const level = levelSelect.value;
+            const textArray = texts[level];
+            return textArray[Math.floor(Math.random() * textArray.length)];
+        }
+
+        function displayText() {
+            textDisplay.innerHTML = currentText.split('').map((char, index) => {
+                let className = 'char';
+                if (index < currentIndex) {
+                    className += ' correct';
+                } else if (index === currentIndex) {
+                    className += ' current';
+                }
+                const engHint = getEngHint(char);
+                const hintSpan = engHint ? `<span class="eng-hint">${engHint}</span>` : '';
+                return `<span class="${className}">${char}${hintSpan}</span>`;
+            }).join('');
+        }
+
+        function startGame() {
+            currentText = getRandomText();
+            currentIndex = 0;
+            errors = 0;
+            totalChars = 0;
+            startTime = Date.now();
+            
+            textInput.value = '';
+            textInput.disabled = false;
+            textInput.focus();
+            
+            startBtn.disabled = true;
+            levelSelect.disabled = true;
+            
+            displayText();
+            
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            currentText = '';
+            currentIndex = 0;
+            errors = 0;
+            totalChars = 0;
+            startTime = null;
+            
+            textInput.value = '';
+            textInput.disabled = true;
+            textDisplay.innerHTML = 'Выберите уровень и нажмите "Начать"';
+            
+            startBtn.disabled = false;
+            levelSelect.disabled = false;
+            
+            document.getElementById('wpm').textContent = '0';
+            document.getElementById('accuracy').textContent = '100%';
+            document.getElementById('timer').textContent = '0';
+        }
+
+        function updateTimer() {
+            if (startTime) {
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                document.getElementById('timer').textContent = elapsed;
+                updateWPM();
+            }
+        }
+
+        function updateWPM() {
+            if (startTime && totalChars > 0) {
+                const minutes = (Date.now() - startTime) / 60000;
+                const wpm = Math.round((totalChars / 5) / minutes);
+                document.getElementById('wpm').textContent = wpm || 0;
+            }
+        }
+
+        function updateAccuracy() {
+            if (totalChars > 0) {
+                const accuracy = Math.round(((totalChars - errors) / totalChars) * 100);
+                document.getElementById('accuracy').textContent = accuracy + '%';
+            }
+        }
+
+        function finishGame() {
+            clearInterval(timerInterval);
+            textInput.disabled = true;
+            startBtn.disabled = false;
+            levelSelect.disabled = false;
+            
+            const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            const accuracy = Math.round(((totalChars - errors) / totalChars) * 100);
+            
+            const finishedMsg = document.createElement('div');
+            finishedMsg.className = 'finished';
+            finishedMsg.innerHTML = `
+                <h2>🎉 Отлично!</h2>
+                <p>Время: ${finalTime} сек | Точность: ${accuracy}%</p>
+            `;
+            
+            textDisplay.parentNode.insertBefore(finishedMsg, textDisplay);
+            setTimeout(() => finishedMsg.remove(), 3000);
+        }
+
+        textInput.addEventListener('input', (e) => {
+            const typed = e.target.value;
+            const lastChar = typed[typed.length - 1];
+            
+            if (currentIndex < currentText.length) {
+                totalChars++;
+                
+                if (lastChar === currentText[currentIndex]) {
+                    currentIndex++;
+                    displayText();
+                    
+                    if (currentIndex === currentText.length) {
+                        finishGame();
+                    }
+                } else {
+                    errors++;
+                }
+                
+                updateAccuracy();
+                updateWPM();
+            }
+        });
+
+        levelSelect.addEventListener('change', resetGame);
+
+        resetGame();
+    </script>
+</body>
+</html>
