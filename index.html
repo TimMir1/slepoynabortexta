@@ -240,13 +240,15 @@
                 <option value="easy">Легкий (средний ряд)</option>
                 <option value="medium">Средний (+ верхний ряд)</option>
                 <option value="hard">Сложный (все буквы)</option>
+                <option value="punctuation">Знаки препинания</option>
+                <option value="symbols">Спецсимволы и скобки</option>
                 <option value="expert">Эксперт (с цифрами)</option>
             </select>
         </div>
 
         <div class="keyboard-hint">💡 Не забудьте включить русскую раскладку!</div>
 
-        <div class="text-display" id="textDisplay"></div>
+        <div class="text-display" id="textDisplay">Выберите уровень и нажмите "Начать"</div>
 
         <div class="input-area">
             <input type="text" id="textInput" placeholder="Начните печатать..." disabled>
@@ -281,6 +283,20 @@
                 'никогда не переставай учиться',
                 'точность превосходит совершенство'
             ],
+            punctuation: [
+                'привет, как дела? отлично!',
+                'один, два, три, четыре.',
+                'где? когда? почему? как?',
+                'стоп! внимание! важно!',
+                'да, нет, может быть.'
+            ],
+            symbols: [
+                'скобки: (один) [два] {три}',
+                'кавычки: "текст" и ещё',
+                'символы: @ # $ % & *',
+                'math: 2 + 2 = 4, 10 - 5',
+                'код: function() { return; }'
+            ],
             expert: [
                 'переменная число = 42 плюс 10',
                 'функция сложить числа от 1 до 100',
@@ -290,19 +306,18 @@
             ]
         };
 
-        // Маппинг русских букв на английские (как на клавиатуре)
         const ruToEng = {
             'а': 'f', 'б': ',', 'в': 'd', 'г': 'u', 'д': 'l', 'е': 't', 'ё': '`',
             'ж': ';', 'з': 'p', 'и': 'b', 'й': 'q', 'к': 'r', 'л': 'k', 'м': 'v',
             'н': 'y', 'о': 'j', 'п': 'g', 'р': 'h', 'с': 'c', 'т': 'n', 'у': 'e',
             'ф': 'a', 'х': '[', 'ц': 'w', 'ч': 'x', 'ш': 'i', 'щ': 'o', 'ъ': ']',
-            'ы': 's', 'ь': 'm', 'э': '\'', 'ю': '.', 'я': 'z', ' ': ' ',
-            '=': '=', '+': '+', '-': '-', '.': '.', ',': ','
+            'ы': 's', 'ь': 'm', 'э': '\'', 'ю': '.', 'я': 'z', ' ': 'space',
+            ',': ',', '.': '.', '!': '!', '?': '?', ':': ':', ';': ';',
+            '-': '-', '=': '=', '+': '+', '_': '_',
+            '(': '(', ')': ')', '[': '[', ']': ']', '{': '{', '}': '}',
+            '"': '"', '\'': '\'', '@': '@', '#': '#', '$': '$', '%': '%',
+            '&': '&', '*': '*', '/': '/', '\\': '\\'
         };
-
-        function getEngHint(ruChar) {
-            return ruToEng[ruChar.toLowerCase()] || '';
-        }
 
         let currentText = '';
         let currentIndex = 0;
@@ -315,6 +330,12 @@
         const textInput = document.getElementById('textInput');
         const startBtn = document.getElementById('startBtn');
         const levelSelect = document.getElementById('level');
+
+        function getEngHint(ruChar) {
+            const hint = ruToEng[ruChar.toLowerCase()];
+            if (hint === 'space') return '␣';
+            return hint || '';
+        }
 
         function getRandomText() {
             const level = levelSelect.value;
@@ -357,6 +378,13 @@
 
         function resetGame() {
             clearInterval(timerInterval);
+            
+            if (currentText) {
+                textInput.disabled = true;
+                startBtn.disabled = false;
+                levelSelect.disabled = false;
+            }
+            
             currentText = '';
             currentIndex = 0;
             errors = 0;
@@ -419,6 +447,10 @@
         }
 
         textInput.addEventListener('input', (e) => {
+            if (!currentText || currentText.length === 0) {
+                return;
+            }
+            
             const typed = e.target.value;
             const lastChar = typed[typed.length - 1];
             
