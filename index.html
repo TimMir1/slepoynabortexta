@@ -65,13 +65,13 @@
 
         .text-display {
             background: #f8f9fa;
-            padding: 30px 30px 40px 30px;
+            padding: 40px 30px 30px 30px;
             border-radius: 12px;
             margin-bottom: 20px;
             font-size: 1.8em;
             line-height: 2.2;
             font-family: 'Monaco', 'Courier New', monospace;
-            min-height: 120px;
+            min-height: 150px;
             letter-spacing: 2px;
         }
 
@@ -79,17 +79,6 @@
             transition: all 0.1s ease;
             display: inline-block;
             position: relative;
-        }
-
-        .char .eng-hint {
-            position: absolute;
-            bottom: -18px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.5em;
-            color: #999;
-            opacity: 0.4;
-            pointer-events: none;
         }
 
         .char.correct {
@@ -105,11 +94,6 @@
         .char.current {
             background: #fbbf24;
             animation: pulse 1s infinite;
-        }
-        
-        .char.current .eng-hint {
-            opacity: 0.7;
-            color: #666;
         }
 
         @keyframes pulse {
@@ -367,16 +351,41 @@
         };
 
         const ruToEng = {
+            // Основные буквы (нижний регистр)
             'а': 'f', 'б': ',', 'в': 'd', 'г': 'u', 'д': 'l', 'е': 't', 'ё': '`',
             'ж': ';', 'з': 'p', 'и': 'b', 'й': 'q', 'к': 'r', 'л': 'k', 'м': 'v',
             'н': 'y', 'о': 'j', 'п': 'g', 'р': 'h', 'с': 'c', 'т': 'n', 'у': 'e',
             'ф': 'a', 'х': '[', 'ц': 'w', 'ч': 'x', 'ш': 'i', 'щ': 'o', 'ъ': ']',
-            'ы': 's', 'ь': 'm', 'э': '\'', 'ю': '.', 'я': 'z', ' ': 'space',
-            ',': ',', '.': '.', '!': '!', '?': '?', ':': ':', ';': ';',
-            '-': '-', '=': '=', '+': '+', '_': '_',
-            '(': '(', ')': ')', '[': '[', ']': ']', '{': '{', '}': '}',
-            '"': '"', '\'': '\'', '@': '@', '#': '#', '$': '$', '%': '%',
-            '&': '&', '*': '*', '/': '/', '\\': '\\'
+            'ы': 's', 'ь': 'm', 'э': '\'', 'ю': '.', 'я': 'z',
+            
+            // Заглавные буквы (Shift)
+            'А': 'F', 'Б': '<', 'В': 'D', 'Г': 'U', 'Д': 'L', 'Е': 'T', 'Ё': '~',
+            'Ж': ':', 'З': 'P', 'И': 'B', 'Й': 'Q', 'К': 'R', 'Л': 'K', 'М': 'V',
+            'Н': 'Y', 'О': 'J', 'П': 'G', 'Р': 'H', 'С': 'C', 'Т': 'N', 'У': 'E',
+            'Ф': 'A', 'Х': '{', 'Ц': 'W', 'Ч': 'X', 'Ш': 'I', 'Щ': 'O', 'Ъ': '}',
+            'Ы': 'S', 'Ь': 'M', 'Э': '"', 'Ю': '>', 'Я': 'Z',
+            
+            // Цифры
+            '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
+            '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+            
+            // Символы с Shift от цифр
+            '!': '!', '"': '@', '№': '#', ';': '$', '%': '%',
+            ':': '^', '?': '&', '*': '*', '(': '(', ')': ')',
+            
+            // Знаки препинания
+            ',': ',', '.': '.', '-': '-', '=': '=',
+            '+': '+', '_': '_', '/': '/', '\\': '\\',
+            
+            // Скобки и кавычки
+            '[': '[', ']': ']', '{': '{', '}': '}',
+            '\'': '\'', '<': '<', '>': '>',
+            
+            // Специальные символы
+            '@': '@', '#': '#', '$': '$', '&': '&',
+            '^': '^', '|': '|', '`': '`', '~': '~',
+            
+            ' ': '␣'
         };
 
         let currentText = '';
@@ -393,8 +402,28 @@
 
         function getEngHint(ruChar) {
             const hint = ruToEng[ruChar.toLowerCase()];
-            if (hint === 'space') return '␣';
-            return hint || '';
+            if (!hint) return '';
+            
+            // Проверяем, заглавная ли буква
+            const isUpperCase = ruChar !== ruChar.toLowerCase() && ruChar === ruChar.toUpperCase();
+            
+            if (ruChar === ' ') return '␣ space';
+            
+            // Для заглавных букв добавляем Shift
+            if (isUpperCase) {
+                return `⇧ Shift + ${hint.toLowerCase()}`;
+            }
+            
+            // Для специальных символов, требующих Shift
+            if ('!"№;%:?*()'.includes(ruChar)) {
+                const shiftHints = {
+                    '!': '1', '"': '2', '№': '3', ';': '4', '%': '5',
+                    ':': '6', '?': '7', '*': '8', '(': '9', ')': '0'
+                };
+                return `⇧ Shift + ${shiftHints[ruChar]}`;
+            }
+            
+            return hint;
         }
 
         function getRandomText() {
@@ -411,9 +440,7 @@
                 } else if (index === currentIndex) {
                     className += ' current';
                 }
-                const engHint = getEngHint(char);
-                const hintSpan = engHint ? `<span class="eng-hint">${engHint}</span>` : '';
-                return `<span class="${className}">${char}${hintSpan}</span>`;
+                return `<span class="${className}">${char}</span>`;
             }).join('');
         }
 
